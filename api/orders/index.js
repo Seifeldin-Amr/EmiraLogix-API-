@@ -79,7 +79,7 @@ export default async function handler(req, res) {
 
       // Trigger webhook after successful order creation
       try {
-        const webhookUrl = process.env.WEBHOOK_URL || 'https://your-webhook-url.com/webhook';
+        const webhookUrl = process.env.WEBHOOK_URL || 'https://sensuously-soapier-rheba.ngrok-free.dev/webhook-test/add-order';
         const webhookResponse = await fetch(webhookUrl, {
           method: 'POST',
           headers: {
