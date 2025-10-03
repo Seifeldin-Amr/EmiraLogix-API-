@@ -76,6 +76,27 @@ export default async function handler(req, res) {
           error: 'Failed to create order: ' + error.message
         });
       }
+
+      // Trigger webhook after successful order creation
+      try {
+        const webhookUrl = process.env.WEBHOOK_URL || 'https://your-webhook-url.com/webhook';
+        const webhookResponse = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            event: 'order_created',
+            order: data[0],
+            timestamp: new Date().toISOString()
+          })
+        });
+        
+        console.log('Webhook called:', webhookResponse.status);
+      } catch (webhookError) {
+        console.error('Webhook call failed:', webhookError.message);
+        // Don't fail the order creation if webhook fails
+      }
       
       res.status(201).json({
         success: true,

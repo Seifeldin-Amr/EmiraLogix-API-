@@ -49,8 +49,27 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         });
-        const text = await res.text();
-        document.getElementById('result').textContent = 'Order sent! Response: ' + text;
+        const result = await res.json();
+        
+        if (result.success) {
+          // Order created successfully, now trigger webhook
+          try {
+            const webhookRes = await fetch('https://your-webhook-url.com/webhook', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                event: 'order_created',
+                order: result.data,
+                timestamp: new Date().toISOString()
+              })
+            });
+            document.getElementById('result').textContent = 'Order created and webhook triggered! Response: ' + JSON.stringify(result);
+          } catch (webhookErr) {
+            document.getElementById('result').textContent = 'Order created but webhook failed: ' + JSON.stringify(result);
+          }
+        } else {
+          document.getElementById('result').textContent = 'Order creation failed: ' + JSON.stringify(result);
+        }
       } catch (err) {
         document.getElementById('result').textContent = 'Error: ' + err;
       }
