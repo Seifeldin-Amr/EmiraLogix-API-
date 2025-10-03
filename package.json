@@ -1,0 +1,16 @@
+{
+  "name": "ordering-system-api",
+  "version": "1.0.0",
+  "description": "Simple ordering system API for Vercel deployment",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.0"
+  },
+  "devDependencies": {
+    "vercel": "^32.0.0"
+  }
+}
