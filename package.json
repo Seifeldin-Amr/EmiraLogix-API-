@@ -2,6 +2,7 @@
   "name": "ordering-system-api",
   "version": "1.0.0",
   "description": "Simple ordering system API for Vercel deployment",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "dev": "vercel dev",
