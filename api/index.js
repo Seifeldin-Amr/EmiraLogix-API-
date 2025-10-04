@@ -14,10 +14,13 @@ export default function handler(req, res) {
         'DELETE /api/customers/[id]': 'Delete customer'
       },
       orders: {
-        'GET /api/orders': 'Get all orders with customer info',
+        'GET /api/orders': 'Get all orders with customer and driver info',
         'POST /api/orders': 'Create new order (auto-creates/updates customer)',
-        'GET /api/orders/[id]': 'Get order by ID with customer info',
-        'PUT /api/orders/[id]': 'Update order'
+        'GET /api/orders/[id]': 'Get order by ID with customer and driver info',
+        'PUT /api/orders/[id]': 'Update order',
+        'PUT /api/orders/[id]/assign-driver': 'Manually assign driver to order',
+        'PUT /api/orders/[id]/auto-assign': 'Auto-assign nearest available driver',
+        'PUT /api/orders/[id]/unassign-driver': 'Remove driver assignment from order'
       },
       drivers: {
         'GET /api/drivers': 'Get all drivers',

@@ -26,6 +26,14 @@ export default async function handler(req, res) {
             phone,
             chat_id,
             address
+          ),
+          driver:drivers(
+            id,
+            name,
+            phone,
+            vehicle_type,
+            license_plate,
+            status
           )
         `)
         .or(`id.eq.${id},order_id.eq.${id}`)
@@ -59,11 +67,12 @@ export default async function handler(req, res) {
   else if (req.method === 'PUT') {
     try {
       // Update order
-      const { customer_id, address, lat, lng, status } = req.body;
+      const { customer_id, driver_id, address, lat, lng, status } = req.body;
       
       // Build update object with only provided fields
       const updateData = {};
       if (customer_id !== undefined) updateData.customer_id = Number(customer_id);
+      if (driver_id !== undefined) updateData.driver_id = driver_id ? Number(driver_id) : null;
       if (address) updateData.address = address;
       if (lat !== undefined) updateData.lat = Number(lat);
       if (lng !== undefined) updateData.lng = Number(lng);
@@ -90,6 +99,14 @@ export default async function handler(req, res) {
             phone,
             chat_id,
             address
+          ),
+          driver:drivers(
+            id,
+            name,
+            phone,
+            vehicle_type,
+            license_plate,
+            status
           )
         `)
         .single();

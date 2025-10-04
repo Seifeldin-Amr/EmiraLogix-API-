@@ -25,6 +25,14 @@ export default async function handler(req, res) {
             phone,
             chat_id,
             address
+          ),
+          driver:drivers(
+            id,
+            name,
+            phone,
+            vehicle_type,
+            license_plate,
+            status
           )
         `)
         .order('created_at', { ascending: false });
@@ -167,6 +175,14 @@ export default async function handler(req, res) {
             phone,
             chat_id,
             address
+          ),
+          driver:drivers(
+            id,
+            name,
+            phone,
+            vehicle_type,
+            license_plate,
+            status
           )
         `);
       
