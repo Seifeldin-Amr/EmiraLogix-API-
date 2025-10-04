@@ -24,6 +24,5 @@ export default function handler(req, res) {
         'PUT /api/drivers/[id]/location': 'Update driver location'
       }
     },
-    documentation: 'See README.md for detailed API documentation'
   });
 }
