@@ -15,7 +15,8 @@ export default function handler(req, res) {
         'GET /api/orders': 'Get all orders with customer and driver info',
         'POST /api/orders': 'Create new order (auto-creates/updates customer)',
         'GET /api/orders/[id]': 'Get order by ID with customer and driver info',
-        'PUT /api/orders/[id]': 'Update order or assign driver (use action: "assign_driver" with driver_id)'
+        'PUT /api/orders/[id]': 'Update order or assign driver (use action: "assign_driver" with driver_id)',
+        'GET /api/orders/customer/[customerid]': 'Get all active orders for a specific customer'
       },
       drivers: {
         'GET /api/drivers': 'Get all drivers',

@@ -12,6 +12,10 @@
       "dest": "/api/customers/[chatid].js?chatid=$1"
     },
     {
+      "src": "/api/orders/customer/([^/]+)",
+      "dest": "/api/orders/customer/[customerid].js?customerid=$1"
+    },
+    {
       "src": "/api/orders/([^/]+)",
       "dest": "/api/orders/[id].js?id=$1"
     },
