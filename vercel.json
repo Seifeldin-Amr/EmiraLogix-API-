@@ -8,6 +8,18 @@
   ],
   "routes": [
     {
+      "src": "/api/orders/([^/]+)",
+      "dest": "/api/orders/[id].js?id=$1"
+    },
+    {
+      "src": "/api/drivers/([^/]+)/location",
+      "dest": "/api/drivers/[id]/location.js?id=$1"
+    },
+    {
+      "src": "/api/drivers/([^/]+)",
+      "dest": "/api/drivers/[id].js?id=$1"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/api/$1"
     },
