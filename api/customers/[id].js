@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase.js'
 export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -93,42 +93,6 @@ export default async function handler(req, res) {
         success: true,
         data: data,
         message: 'Customer updated successfully'
-      });
-    } catch (err) {
-      res.status(500).json({
-        success: false,
-        error: 'Internal server error: ' + err.message
-      });
-    }
-  }
-  else if (req.method === 'DELETE') {
-    try {
-      // Delete customer (this will cascade to orders due to foreign key)
-      const { data, error } = await supabase
-        .from('customers')
-        .delete()
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error && error.code === 'PGRST116') {
-        return res.status(404).json({
-          success: false,
-          error: 'Customer not found'
-        });
-      }
-      
-      if (error) {
-        return res.status(500).json({
-          success: false,
-          error: 'Failed to delete customer: ' + error.message
-        });
-      }
-      
-      res.status(200).json({
-        success: true,
-        data: data,
-        message: 'Customer deleted successfully'
       });
     } catch (err) {
       res.status(500).json({

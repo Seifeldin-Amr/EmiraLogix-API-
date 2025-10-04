@@ -8,10 +8,7 @@ export default function handler(req, res) {
     endpoints: {
       customers: {
         'GET /api/customers': 'Get all customers',
-        'POST /api/customers': 'Create/update customer',
-        'GET /api/customers/[id]': 'Get customer by ID',
-        'PUT /api/customers/[id]': 'Update customer',
-        'DELETE /api/customers/[id]': 'Delete customer'
+        'POST /api/customers': 'Create/update customer'
       },
       orders: {
         'GET /api/orders': 'Get all orders with customer and driver info',
