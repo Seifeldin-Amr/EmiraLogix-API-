@@ -16,7 +16,8 @@
   <form id="orderForm">
     <label>Order ID <input type="text" name="order_id" required></label>
     <label>Customer Name <input type="text" name="customer_name" required></label>
-    <label>Chat ID <input type="number" name="chat_id" required></label>
+    <label>Phone <input type="tel" name="phone" required></label>
+    <label>Chat ID (Optional) <input type="number" name="chat_id"></label>
     <label>Address <input type="text" name="address" required></label>
     <label>Latitude <input type="number" step="any" name="lat" required></label>
     <label>Longitude <input type="number" step="any" name="lng" required></label>
@@ -25,6 +26,7 @@
         <option value="pending">Pending</option>
         <option value="processing">Processing</option>
         <option value="completed">Completed</option>
+        <option value="cancelled">Cancelled</option>
       </select>
     </label>
     <button type="submit">Add Order</button>
@@ -37,7 +39,8 @@
       const data = {
         order_id: form.order_id.value,
         customer_name: form.customer_name.value,
-        chat_id: Number(form.chat_id.value),
+        phone: form.phone.value,
+        chat_id: form.chat_id.value ? Number(form.chat_id.value) : null,
         address: form.address.value,
         lat: Number(form.lat.value),
         lng: Number(form.lng.value),

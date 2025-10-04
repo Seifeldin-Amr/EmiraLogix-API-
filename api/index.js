@@ -6,10 +6,17 @@ export default function handler(req, res) {
     message: 'Ordering System API',
     version: '1.0.0',
     endpoints: {
+      customers: {
+        'GET /api/customers': 'Get all customers',
+        'POST /api/customers': 'Create/update customer',
+        'GET /api/customers/[id]': 'Get customer by ID',
+        'PUT /api/customers/[id]': 'Update customer',
+        'DELETE /api/customers/[id]': 'Delete customer'
+      },
       orders: {
-        'GET /api/orders': 'Get all orders',
-        'POST /api/orders': 'Create new order',
-        'GET /api/orders/[id]': 'Get order by ID',
+        'GET /api/orders': 'Get all orders with customer info',
+        'POST /api/orders': 'Create new order (auto-creates/updates customer)',
+        'GET /api/orders/[id]': 'Get order by ID with customer info',
         'PUT /api/orders/[id]': 'Update order'
       },
       drivers: {

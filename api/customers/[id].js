@@ -15,33 +15,24 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      // Get order by ID or order_id with customer information
+      // Get customer by ID
       const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          customer:customers(
-            id,
-            customer_name,
-            phone,
-            chat_id,
-            address
-          )
-        `)
-        .or(`id.eq.${id},order_id.eq.${id}`)
+        .from('customers')
+        .select('*')
+        .eq('id', id)
         .single();
       
       if (error && error.code === 'PGRST116') {
         return res.status(404).json({
           success: false,
-          error: 'Order not found'
+          error: 'Customer not found'
         });
       }
       
       if (error) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to fetch order: ' + error.message
+          error: 'Failed to fetch customer: ' + error.message
         });
       }
       
@@ -58,16 +49,15 @@ export default async function handler(req, res) {
   }
   else if (req.method === 'PUT') {
     try {
-      // Update order
-      const { customer_id, address, lat, lng, status } = req.body;
+      // Update customer
+      const { customer_name, phone, chat_id, address } = req.body;
       
       // Build update object with only provided fields
       const updateData = {};
-      if (customer_id !== undefined) updateData.customer_id = Number(customer_id);
-      if (address) updateData.address = address;
-      if (lat !== undefined) updateData.lat = Number(lat);
-      if (lng !== undefined) updateData.lng = Number(lng);
-      if (status) updateData.status = status;
+      if (customer_name) updateData.customer_name = customer_name;
+      if (phone) updateData.phone = phone;
+      if (chat_id !== undefined) updateData.chat_id = chat_id ? Number(chat_id) : null;
+      if (address !== undefined) updateData.address = address;
       
       if (Object.keys(updateData).length === 0) {
         return res.status(400).json({
@@ -79,39 +69,66 @@ export default async function handler(req, res) {
       updateData.updated_at = new Date().toISOString();
       
       const { data, error } = await supabase
-        .from('orders')
+        .from('customers')
         .update(updateData)
-        .or(`id.eq.${id},order_id.eq.${id}`)
-        .select(`
-          *,
-          customer:customers(
-            id,
-            customer_name,
-            phone,
-            chat_id,
-            address
-          )
-        `)
+        .eq('id', id)
+        .select()
         .single();
       
       if (error && error.code === 'PGRST116') {
         return res.status(404).json({
           success: false,
-          error: 'Order not found'
+          error: 'Customer not found'
         });
       }
       
       if (error) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to update order: ' + error.message
+          error: 'Failed to update customer: ' + error.message
         });
       }
       
       res.status(200).json({
         success: true,
         data: data,
-        message: 'Order updated successfully'
+        message: 'Customer updated successfully'
+      });
+    } catch (err) {
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error: ' + err.message
+      });
+    }
+  }
+  else if (req.method === 'DELETE') {
+    try {
+      // Delete customer (this will cascade to orders due to foreign key)
+      const { data, error } = await supabase
+        .from('customers')
+        .delete()
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error && error.code === 'PGRST116') {
+        return res.status(404).json({
+          success: false,
+          error: 'Customer not found'
+        });
+      }
+      
+      if (error) {
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to delete customer: ' + error.message
+        });
+      }
+      
+      res.status(200).json({
+        success: true,
+        data: data,
+        message: 'Customer deleted successfully'
       });
     } catch (err) {
       res.status(500).json({

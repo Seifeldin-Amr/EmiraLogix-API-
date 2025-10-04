@@ -10,6 +10,12 @@ A simple REST API for an ordering system with order management and driver tracki
 3. Run the SQL commands from `schema.sql` to create the tables and sample data
 4. Go to Settings → API to get your project URL and anon key
 
+**Important Schema Changes:**
+- The new schema includes a separate `customers` table
+- Orders are now linked to customers via `customer_id` foreign key
+- When creating orders, customers are automatically created/updated based on phone number
+- The API maintains backward compatibility but returns enhanced data with customer information
+
 ### 2. Environment Variables
 1. Copy `.env.example` to `.env.local`
 2. Fill in your Supabase credentials:
@@ -31,17 +37,86 @@ npm install
 
 ## API Endpoints
 
-### Orders
+### Customers
 
-#### Get All Orders
-- **GET** `/api/orders`
+#### Get All Customers
+- **GET** `/api/customers`
 - **Query Parameters:**
-  - `status` (optional): Filter by order status (`pending`, `processing`, `completed`)
+  - `phone` (optional): Filter by phone number
+  - `chat_id` (optional): Filter by Telegram chat ID
 - **Response:**
   ```json
   {
     "success": true,
     "data": [...],
+    "count": 1
+  }
+  ```
+
+#### Create/Update Customer
+- **POST** `/api/customers`
+- **Body:**
+  ```json
+  {
+    "customer_name": "John Doe",
+    "phone": "+1234567890",
+    "chat_id": 123456789,
+    "address": "123 Main St"
+  }
+  ```
+- **Note:** If customer exists by phone, it will be updated; otherwise, a new customer is created.
+
+#### Get Customer by ID
+- **GET** `/api/customers/[id]`
+- **Parameters:** `id` - Customer ID
+
+#### Update Customer
+- **PUT** `/api/customers/[id]`
+- **Body:** (partial update supported)
+  ```json
+  {
+    "customer_name": "Updated Name",
+    "phone": "+0987654321",
+    "chat_id": 987654321,
+    "address": "New Address"
+  }
+  ```
+
+#### Delete Customer
+- **DELETE** `/api/customers/[id]`
+- **Note:** This will also delete all orders associated with the customer (CASCADE).
+
+### Orders
+
+#### Get All Orders
+- **GET** `/api/orders`
+- **Query Parameters:**
+  - `status` (optional): Filter by order status (`pending`, `processing`, `completed`, `cancelled`)
+  - `customer_id` (optional): Filter by customer ID
+- **Response:**
+  ```json
+  {
+    "success": true,
+    "data": [
+      {
+        "id": 1,
+        "order_id": "ORD-001",
+        "customer_id": 1,
+        "address": "123 Main St",
+        "lat": 40.7128,
+        "lng": -74.0060,
+        "status": "pending",
+        "created_at": "2025-01-01T00:00:00.000Z",
+        "updated_at": "2025-01-01T00:00:00.000Z",
+        "customer": {
+          "id": 1,
+          "customer_name": "John Doe",
+          "phone": "+1234567890",
+          "chat_id": 123456789,
+          "address": "123 Main St"
+        }
+      }
+    ],
     "count": 1
   }
   ```
@@ -53,6 +128,7 @@ npm install
   {
     "order_id": "ORD-002",
     "customer_name": "Jane Doe",
+    "phone": "+0987654321",
     "chat_id": 987654321,
     "address": "456 Oak Ave",
     "lat": 40.7128,
@@ -60,17 +136,19 @@ npm install
     "status": "pending"
   }
   ```
+- **Note:** Automatically creates or updates customer based on phone number.
 
 #### Get Order by ID
 - **GET** `/api/orders/[id]`
 - **Parameters:** `id` - Order ID or order_id
+- **Response:** Returns order with customer information included.
 
 #### Update Order
 - **PUT** `/api/orders/[id]`
 - **Body:** (partial update supported)
   ```json
   {
-    "customer_name": "Updated Name",
+    "customer_id": 2,
     "address": "New Address",
     "lat": 40.7589,
     "lng": -73.9851,
@@ -136,19 +214,38 @@ npm install
 
 ## Data Models
 
+### Customer
+```json
+{
+  "id": "1",
+  "customer_name": "John Doe",
+  "phone": "+1234567890",
+  "chat_id": 123456789,
+  "address": "123 Main St",
+  "created_at": "2025-01-01T00:00:00.000Z",
+  "updated_at": "2025-01-01T00:00:00.000Z"
+}
+```
+
 ### Order
 ```json
 {
   "id": "1",
   "order_id": "ORD-001",
-  "customer_name": "John Doe",
-  "chat_id": 123456789,
+  "customer_id": 1,
   "address": "123 Main St",
   "lat": 40.7128,
   "lng": -74.0060,
   "status": "pending",
   "created_at": "2025-01-01T00:00:00.000Z",
-  "updated_at": "2025-01-01T00:00:00.000Z"
+  "updated_at": "2025-01-01T00:00:00.000Z",
+  "customer": {
+    "id": 1,
+    "customer_name": "John Doe",
+    "phone": "+1234567890",
+    "chat_id": 123456789,
+    "address": "123 Main St"
+  }
 }
 ```
 
