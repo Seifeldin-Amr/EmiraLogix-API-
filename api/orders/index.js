@@ -13,8 +13,8 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      // Get all orders with customer information or filter by status
-      const { status, customer_id } = req.query;
+      // Get all orders with customer and driver information or filter by status
+      const { status, customer_id, driver_id, phone, chat_id } = req.query;
       
       let query = supabase.from('orders')
         .select(`
@@ -43,6 +43,33 @@ export default async function handler(req, res) {
       
       if (customer_id) {
         query = query.eq('customer_id', customer_id);
+      }
+      
+      if (driver_id) {
+        query = query.eq('driver_id', driver_id);
+      }
+      
+      // Filter by customer phone or chat_id if provided
+      if (phone || chat_id) {
+        const customerQuery = supabase.from('customers').select('id');
+        
+        if (phone) {
+          customerQuery.eq('phone', phone);
+        } else if (chat_id) {
+          customerQuery.eq('chat_id', chat_id);
+        }
+        
+        const { data: customers } = await customerQuery;
+        if (customers && customers.length > 0) {
+          query = query.in('customer_id', customers.map(c => c.id));
+        } else {
+          // No matching customers found
+          return res.status(200).json({
+            success: true,
+            data: [],
+            count: 0
+          });
+        }
       }
       
       const { data, error } = await query;

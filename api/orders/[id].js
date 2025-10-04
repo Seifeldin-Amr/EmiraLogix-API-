@@ -66,10 +66,89 @@ export default async function handler(req, res) {
   }
   else if (req.method === 'PUT') {
     try {
-      // Update order
-      const { customer_id, driver_id, address, lat, lng, status } = req.body;
+      const { action, driver_id, customer_id, address, lat, lng, status } = req.body;
       
-      // Build update object with only provided fields
+      // Handle driver assignment
+      if (action === 'assign_driver') {
+        if (!driver_id) {
+          return res.status(400).json({
+            success: false,
+            error: 'driver_id is required for driver assignment'
+          });
+        }
+
+        // Check if driver exists and is available
+        const { data: driver, error: driverError } = await supabase
+          .from('drivers')
+          .select('*')
+          .eq('id', driver_id)
+          .eq('status', 'available')
+          .single();
+
+        if (driverError || !driver) {
+          return res.status(400).json({
+            success: false,
+            error: 'Driver not found or not available'
+          });
+        }
+
+        // Update order with driver assignment
+        const { data, error } = await supabase
+          .from('orders')
+          .update({
+            driver_id: driver_id,
+            status: 'assigned',
+            updated_at: new Date().toISOString()
+          })
+          .or(`id.eq.${id},order_id.eq.${id}`)
+          .select(`
+            *,
+            customer:customers(
+              id,
+              customer_name,
+              phone,
+              chat_id,
+              address
+            ),
+            driver:drivers(
+              id,
+              name,
+              phone,
+              vehicle_type,
+              license_plate,
+              status
+            )
+          `)
+          .single();
+
+        if (error && error.code === 'PGRST116') {
+          return res.status(404).json({
+            success: false,
+            error: 'Order not found'
+          });
+        }
+
+        if (error) {
+          return res.status(500).json({
+            success: false,
+            error: 'Failed to assign driver: ' + error.message
+          });
+        }
+
+        // Update driver status to busy
+        await supabase
+          .from('drivers')
+          .update({ status: 'busy' })
+          .eq('id', driver_id);
+
+        return res.status(200).json({
+          success: true,
+          data: data,
+          message: `Driver ${driver.name} assigned successfully`
+        });
+      }
+
+      // Regular order update
       const updateData = {};
       if (customer_id !== undefined) updateData.customer_id = Number(customer_id);
       if (driver_id !== undefined) updateData.driver_id = driver_id ? Number(driver_id) : null;
