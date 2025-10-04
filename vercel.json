@@ -8,6 +8,10 @@
   ],
   "routes": [
     {
+      "src": "/api/customers/([^/]+)",
+      "dest": "/api/customers/[chatid].js?chatid=$1"
+    },
+    {
       "src": "/api/orders/([^/]+)",
       "dest": "/api/orders/[id].js?id=$1"
     },
