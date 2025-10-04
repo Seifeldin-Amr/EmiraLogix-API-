@@ -8,7 +8,8 @@ export default function handler(req, res) {
     endpoints: {
       customers: {
         'GET /api/customers': 'Get all customers',
-        'POST /api/customers': 'Create/update customer'
+        'POST /api/customers': 'Create/update customer',
+        'GET /api/customers/[chatid]': 'Get customer by chat ID'
       },
       orders: {
         'GET /api/orders': 'Get all orders with customer and driver info',
