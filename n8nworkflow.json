@@ -1,0 +1,477 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b91e83f6-311d-4535-ab3d-423a1aa371c1",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "updates": "={{ [\"message\"] }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        256,
+        0
+      ],
+      "id": "f2593260-7600-49fa-b5a4-4bcd91a30d93",
+      "name": "Telegram Trigger",
+      "webhookId": "324b6f88-438d-45f6-8cbd-ed1c813aee7a",
+      "credentials": {
+        "telegramApi": {
+          "id": "L3SiXmIhNDRofLJ3",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  json: {\n    chatId: $json.message.chat.id,\n    chatInput: `User said: ${$json.message.text}`\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "f1a4ddfa-749f-4f4d-9b08-de85598324cc",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Code in JavaScript').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "You are a friendly and helpful assistant for an ordering app.  \n\nRULES:\n1. You only provide assistance related to orders:\n   - order status\n   - delivery details\n   - order modifications\n   - cancellations\n   - payment queries  \n\n2. If a user asks about anything unrelated to orders, politely redirect them:\n   Example: “I’m here to help with your orders! Could you tell me more about your order so I can assist you?”  \n\n3. Always automatically fetch the user’s order details from the provided API using their chat ID.  \n\n4. If the user has only one active order, respond directly with details about that order.  \n\n5. If the user has multiple active orders:\n   - List all active orders with identifying details (order number, items, or dates).  \n   - Politely ask the user to confirm which order they want to discuss.  \n\n6. Always respond in a natural, human, and conversational tone.  \n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "889231f4-8e16-48a5-b279-c7a14b84e133",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        672,
+        208
+      ],
+      "id": "487ef391-61cb-4dbf-856f-bdcf73c291ce",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "QjeK5YVFyuQXZaxk",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Get chatId from previous input (item pairing)\nconst chatId = $input.item.json.chatId;  // carries over\nconst replyText = $json;  // plain text from AI\n\nreturn {\n  json: {\n    chatId,\n    replyText\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        0
+      ],
+      "id": "5ca76949-fdca-41e6-9b1e-bfe77d049ec9",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "add-order",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        48,
+        384
+      ],
+      "id": "5a130bdb-c5f1-497d-94e7-105a780cb028",
+      "name": "Webhook",
+      "webhookId": "dbbacc53-1b9f-4246-b5c9-bf7b20c4938c"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Code in JavaScript').item.json.chatId }}",
+        "text": "={{ $json.replyText.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1376,
+        0
+      ],
+      "id": "03a167bb-103f-4839-858b-282c0506a275",
+      "name": "Send a text message",
+      "webhookId": "cb3e3192-0a6e-42d4-bd64-ed67c17b1a1b",
+      "credentials": {
+        "telegramApi": {
+          "id": "L3SiXmIhNDRofLJ3",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const toRad = (value) => value * Math.PI / 180;\nconst R = 6371; // Earth radius in km\n\n// User location from webhook\nconst userLat = $('Webhook').first().json.body.order.lat;\nconst userLon = $('Webhook').first().json.body.order.lng;\n\nif (isNaN(userLat) || isNaN(userLon)) {\n    throw new Error(\"User latitude or longitude is invalid.\");\n}\n\n// Make sure data exists\nconst drivers = $input.first().json.data;\n\nif (!drivers || !Array.isArray(drivers)) {\n    throw new Error(\"Driver data is missing or not an array.\");\n}\n\nconst output = [];\n\nfor (const driver of drivers) {\n    // Access lat/lng safely\n    const driverLat = Number(driver.lat);\n    const driverLon = Number(driver.lng);\n\n    if (isNaN(driverLat) || isNaN(driverLon)) {\n        console.warn(`Driver ${driver.name} has invalid coordinates. Skipping.`);\n        continue;\n    }\n\n    // Haversine formula\n    const dLat = toRad(driverLat - userLat);\n    const dLon = toRad(driverLon - userLon);\n\n    const a = Math.sin(dLat / 2) ** 2 +\n              Math.cos(toRad(userLat)) * Math.cos(toRad(driverLat)) *\n              Math.sin(dLon / 2) ** 2;\n\n    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));\n    const distance = R * c; // Distance in km\n\n   output.push({\n  json: {\n    driver: { ...driver },\n    distance,\n    chatid: $('Webhook').first().json.body.order.chat_id,\n    orderid:$('Webhook').first().json.body.order.id\n  }\n});\n\n}\n\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        384
+      ],
+      "id": "3a76ac2d-5301-45b0-8ac5-785e203e22a4",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "sortFieldsUi": {
+          "sortField": [
+            {
+              "fieldName": "distance"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [
+        640,
+        384
+      ],
+      "id": "617f1344-4acd-41e5-8590-b8fb58ef82c8",
+      "name": "Sort"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Code in JavaScript3').item.json.chatid }}",
+        "text": "={{ $('Code in JavaScript3').item.json.message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1248,
+        384
+      ],
+      "id": "f534b438-b4cc-4f71-9bf4-9de8698618aa",
+      "name": "Send a text message1",
+      "webhookId": "a70bc534-209c-4c96-bfc4-46357dc65794",
+      "credentials": {
+        "telegramApi": {
+          "id": "L3SiXmIhNDRofLJ3",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const driver = $input.first().json.driver;\nconst distance = $input.first().json.distance;\n\nconst mapsUrl = `https://www.google.com/maps/search/?api=1&query=${driver.lat},${driver.lng}`;\n\nconst message = `📦 New order assigned!\\nDriver: ${driver.name}\\nDistance: ${distance} km\\nOrder location: ${mapsUrl}`;\n\nreturn {\n  json: {\n    message: message,\n    chatid: $input.first().json.chatid,\n    driverid:driver.id,\n    orderid :$input.first().json.orderid\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        384
+      ],
+      "id": "f85c1948-d7ff-4c2d-a461-503b4cdf4e20",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Code in JavaScript').item.json.chatId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        848,
+        208
+      ],
+      "id": "a783b115-14f0-4059-80fd-f19663785070",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "url": "https://emira-logix-api.vercel.app/api/drivers",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        384
+      ],
+      "id": "e2db923e-9e67-4740-97fd-77cea7184410",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "url": "=https://emira-logix-api.vercel.app/api/orders/customer/ {{ $('HTTP Request3').item.json.data.id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1056,
+        208
+      ],
+      "id": "bd64dafc-f666-4bad-b3ad-74a832dfcff5",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://emira-logix-api.vercel.app/api/orders/ {{ $json.orderid }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "assigned"
+            },
+            {
+              "name": "driver_id",
+              "value": "={{ $json.driverid }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1056,
+        384
+      ],
+      "id": "0d90696c-55b5-4669-9f62-0a0cb9bdec08",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "url": "=https://emira-logix-api.vercel.app/api/customers/{{ $json.chatId }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "ce1ab508-a384-404c-9540-3444be9eb900",
+      "name": "HTTP Request3"
+    }
+  ],
+  "pinData": {
+    "Telegram Trigger": [
+      {
+        "json": {
+          "message": {
+            "chat": {
+              "id": 8097662972
+            },
+            "text": "Where is my order?"
+          }
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Sort",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sort": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message1": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "dc215291-d853-4cf6-897b-b96318c0cab6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e6cd597f9c5111ed39dad21df3390b07841d34a220f3f30b84460cc1bc998adc"
+  },
+  "id": "CehOQxrwvufubBNX",
+  "tags": []
+}
